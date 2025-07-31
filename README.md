@@ -60,7 +60,6 @@ More mini-games and expansions are planned in future updates.
 
 \[LEFT] ←       → \[RIGHT]
 
-```
   ↓
 [DOWN]
 ```
