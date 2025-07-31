@@ -55,14 +55,11 @@ More mini-games and expansions are planned in future updates.
 
 ```
 
-\[UP]
-↑
-
-\[LEFT] ←       → \[RIGHT]
-
+[UP]
+  ↑
+                     [LEFT] ←       → [RIGHT]
   ↓
 [DOWN]
-```
 
 ```
 
