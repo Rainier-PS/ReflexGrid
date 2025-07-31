@@ -106,5 +106,6 @@ Upload the `ReflexGrid.ino` sketch to your board using the Arduino IDE with RP20
 
 > **Note**  
 > This board passes both ERC and DRC checks and meets all Pathfinder hardware submission standards.
+> Hackatime records for the Kicad PCB file goes by the name DIYGamepad and Arduino firmware file goes by the name ReflexGrid. 
 
 ---
