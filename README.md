@@ -13,7 +13,7 @@ More mini-games and expansions are planned in future updates.
 ## Images
 
 ### Schematic  
-![Schematic](mages/Schematics.png)
+![Schematic](images/Schematics.png)
 
 ### PCB Layout  
 ![PCB Layout](images/PCB.png)
