@@ -13,10 +13,22 @@ int playerY = 0;
 int dangerX = 1;
 int dangerY = 1;
 
-unsigned long dangerShownTime = 0;
-unsigned long reactionTime = 2000;
 bool dangerActive = false;
 bool gameOver = false;
+
+unsigned long dangerShownTime = 0;
+unsigned long lastDangerSpawnTime = 0;
+unsigned long reactionTime = 2000;
+
+unsigned long lastMoveTime = 0;
+unsigned long lastBlink = 0;
+bool dangerLEDState = false;
+
+int score = 0;
+
+const unsigned long moveCooldown = 150;
+const unsigned long blinkInterval = 200;
+const unsigned long dangerLockDuration = 200;
 
 void setup() {
   pinMode(BUTTON_UP_PIN, INPUT_PULLUP);
@@ -38,7 +50,9 @@ void setup() {
 
 void loop() {
   if (gameOver) {
+    showPlayerCaught();
     flashAll();
+    showFinalScore();  // NEW: Show score using LED blinks
     resetGame();
     return;
   }
@@ -49,44 +63,40 @@ void loop() {
   if (!dangerActive) {
     spawnDanger();
     dangerShownTime = millis();
+    lastDangerSpawnTime = millis();
+    dangerLEDState = false;
+    lastBlink = millis();
     dangerActive = true;
   }
 
-  if ((millis() / 200) % 2 == 0) {
-    digitalWrite(LED_PINS[dangerY][dangerX], HIGH);
-  } else {
-    if (!(playerX == dangerX && playerY == dangerY))
-      digitalWrite(LED_PINS[dangerY][dangerX], LOW);
-  }
+  blinkDangerLED();
 
-  if (dangerActive && (millis() - dangerShownTime > reactionTime)) {
+  if (dangerActive && millis() - dangerShownTime > reactionTime) {
     if (playerX == dangerX && playerY == dangerY) {
       gameOver = true;
     } else {
       dangerActive = false;
-      reactionTime = (reactionTime - 100 > 500) ? reactionTime - 100 : 500;
+      reactionTime = max(reactionTime - 100, 500UL);
+      score++;
+      showSafeDodge();
     }
   }
 
-  delay(30);
+  delay(10);
 }
 
 void handleInput() {
+  if (millis() - lastMoveTime < moveCooldown) return;
+  if (millis() - lastDangerSpawnTime < dangerLockDuration) return;
+
   if (digitalRead(BUTTON_UP_PIN) == LOW && playerY > 0) {
-    playerY--;
-    delay(150);
-  }
-  if (digitalRead(BUTTON_DOWN_PIN) == LOW && playerY < 1) {
-    playerY++;
-    delay(150);
-  }
-  if (digitalRead(BUTTON_LEFT_PIN) == LOW && playerX > 0) {
-    playerX--;
-    delay(150);
-  }
-  if (digitalRead(BUTTON_RIGHT_PIN) == LOW && playerX < 1) {
-    playerX++;
-    delay(150);
+    playerY--; lastMoveTime = millis();
+  } else if (digitalRead(BUTTON_DOWN_PIN) == LOW && playerY < 1) {
+    playerY++; lastMoveTime = millis();
+  } else if (digitalRead(BUTTON_LEFT_PIN) == LOW && playerX > 0) {
+    playerX--; lastMoveTime = millis();
+  } else if (digitalRead(BUTTON_RIGHT_PIN) == LOW && playerX < 1) {
+    playerX++; lastMoveTime = millis();
   }
 }
 
@@ -107,20 +117,58 @@ void spawnDanger() {
   } while (dangerX == playerX && dangerY == playerY);
 }
 
+void blinkDangerLED() {
+  if (!dangerActive) return;
+
+  if (millis() - lastBlink > blinkInterval) {
+    dangerLEDState = !dangerLEDState;
+    lastBlink = millis();
+    digitalWrite(LED_PINS[dangerY][dangerX], dangerLEDState ? HIGH : LOW);
+  }
+}
+
+void showSafeDodge() {
+  digitalWrite(LED_PINS[playerY][playerX], LOW);
+  delay(100);
+  digitalWrite(LED_PINS[playerY][playerX], HIGH);
+}
+
+void showPlayerCaught() {
+  for (int i = 0; i < 5; i++) {
+    digitalWrite(LED_PINS[playerY][playerX], HIGH);
+    delay(100);
+    digitalWrite(LED_PINS[playerY][playerX], LOW);
+    delay(100);
+  }
+}
+
 void flashAll() {
   for (int i = 0; i < 4; i++) {
-    for (int y = 0; y < 2; y++) {
-      for (int x = 0; x < 2; x++) {
-        digitalWrite(LED_PINS[y][x], HIGH);
-      }
-    }
+    setAllLEDs(HIGH);
     delay(200);
-    for (int y = 0; y < 2; y++) {
-      for (int x = 0; x < 2; x++) {
-        digitalWrite(LED_PINS[y][x], LOW);
-      }
-    }
+    setAllLEDs(LOW);
     delay(200);
+  }
+}
+
+void setAllLEDs(bool state) {
+  for (int y = 0; y < 2; y++) {
+    for (int x = 0; x < 2; x++) {
+      digitalWrite(LED_PINS[y][x], state);
+    }
+  }
+}
+
+// Show the final score using LED blinks
+void showFinalScore() {
+  delay(500);  // short pause after flashAll()
+
+  int blinkCount = min(score, 10); // limit to 10 blinks for practicality
+  for (int i = 0; i < blinkCount; i++) {
+    setAllLEDs(HIGH);
+    delay(150);
+    setAllLEDs(LOW);
+    delay(150);
   }
 }
 
@@ -130,6 +178,7 @@ void resetGame() {
   playerX = 0;
   playerY = 0;
   reactionTime = 2000;
+  score = 0;
   drawPlayer();
   delay(1000);
-} 
+}
