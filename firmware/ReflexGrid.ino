@@ -52,7 +52,7 @@ void loop() {
   if (gameOver) {
     showPlayerCaught();
     flashAll();
-    showFinalScore();  // NEW: Show score using LED blinks
+    showFinalScore();
     resetGame();
     return;
   }
@@ -159,11 +159,10 @@ void setAllLEDs(bool state) {
   }
 }
 
-// Show the final score using LED blinks
 void showFinalScore() {
-  delay(500);  // short pause after flashAll()
+  delay(500);
 
-  int blinkCount = min(score, 10); // limit to 10 blinks for practicality
+  int blinkCount = min(score, 10);
   for (int i = 0; i < blinkCount; i++) {
     setAllLEDs(HIGH);
     delay(150);
